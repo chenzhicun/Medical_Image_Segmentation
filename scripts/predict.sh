@@ -1,0 +1,9 @@
+export CUDA_VISIBLE_DEVICES=2
+cd ..
+python predict.py\
+    --saved_model ./checkpoints/test/CP_best.pth\
+    --input_dir ./data/test_img\
+    --output_dir ./output\
+    --mask_dir ./data/test_label\
+    --mask_threshold 0.5\
+    --model_name unet
