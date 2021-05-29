@@ -1,5 +1,8 @@
 import torch
 from torch.autograd import Function
+import numpy as np
+import copy
+from queue import Queue
 
 
 def IOU(predict, target):
@@ -52,3 +55,59 @@ def dice_coeff(input, target):
         s = s + DiceCoeff().forward(c[0], c[1])
 
     return s / (i + 1)
+
+
+def compute_metric(predict, label):
+    def get_segment(data):
+        data = copy.deepcopy(data)
+        segment = []
+        for i in range(len(data)):
+            for j in range(len(data[i])):
+                if data[i][j]:
+                    data[i][j] = False
+                    temp_seg = [(i, j)]
+                    task_queue = Queue()
+                    task_queue.put((i, j))
+                    while not task_queue.empty():
+                        task = task_queue.get()
+                        (m, n) = task
+                        task_neighbor = [(m+1, n), (m+1, n-1), (m+1, n+1),
+                                (m-1, n), (m-1, n-1), (m-1, n+1),
+                                (m, n+1), (m, n-1)]
+                        for neighbor in task_neighbor:
+                            (x, y) = neighbor
+                            if 0 <= x < 512 and 0 <= y < 512 and data[x][y]:
+                                temp_seg.append((x, y))
+                                data[x][y] = False
+                                task_queue.put((x, y))
+                    segment.append(temp_seg)
+        return segment
+
+    seg = get_segment(label)
+    seg_predict = get_segment(predict)
+
+    prob_matrix = np.zeros((len(seg_predict), len(seg)))
+    for i in range(len(seg_predict)):
+        for j in range(len(seg)):
+            prob_matrix[i][j] = len(set(seg_predict[i]) & set(seg[j])) * 1.0 / 512 / 512
+
+    s = np.sum(prob_matrix, axis=1)
+    t = np.sum(prob_matrix, axis=0)
+
+    prob_matrix_pow = prob_matrix * prob_matrix
+    s_pow = s * s
+    t_pow = t * t
+
+    V_rand = np.sum(prob_matrix_pow.flatten()) / ( 0.5 * np.sum(s_pow) + 0.5 * np.sum(t_pow))
+
+    prob_matrix_entropy = np.nan_to_num(prob_matrix * np.log(prob_matrix))
+    s_entropy = np.nan_to_num(s * np.log(s))
+    t_entropy = np.nan_to_num(t * np.log(t))
+
+    I_s_t = np.sum(prob_matrix_entropy.flatten()) - np.sum(s_entropy) - np.sum(t_entropy)
+    H_s = -np.sum(s_entropy)
+    H_t = -np.sum(t_entropy)
+
+    V_info = I_s_t / (0.5 * H_s + 0.5 * H_t)
+
+    return V_rand, V_info
