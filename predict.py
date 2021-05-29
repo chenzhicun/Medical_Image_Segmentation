@@ -73,7 +73,7 @@ def get_args():
 
 
 def mask_to_image(mask):
-    return Image.fromarray((mask * 255).astype(np.uint8))
+    return Image.fromarray((255 - mask * 255).astype(np.uint8))
 
 
 if __name__ == "__main__":
@@ -116,5 +116,7 @@ if __name__ == "__main__":
 
     test_dataset = MIS_Dataset(in_dir,args.mask_dir,argument=False,type='test')
     test_dataloader = DataLoader(test_dataset)
-    score = eval_net(net, test_dataloader,device)
-    print(f'The dice score on test dataset is {score}.')
+    dice_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='dice')
+    print(f'The dice score on test dataset is {dice_score}.')
+    iou_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='iou')
+    print(f'The IOU score on test dataset is {iou_score}.')

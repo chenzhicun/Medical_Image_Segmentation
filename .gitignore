@@ -1,4 +1,10 @@
 # Byte-compiled / optimized / DLL files
+*.png
+*.npy
+*.ipynb
+*.pth
+runs/
+data/
 __pycache__/
 *.py[cod]
 *$py.class
