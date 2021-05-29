@@ -2,6 +2,18 @@ import torch
 from torch.autograd import Function
 
 
+def IOU(predict, target):
+    '''
+    compute the intesection over union (IOU) of predict segmentation and ground truth segmentation.
+    predict.shape: 1 X 1 X H X W
+    target.shape: 1 X 1 X H X W
+    '''
+    intersection = torch.dot(predict.view(-1), target.view(-1))
+    union = torch.sum(predict) + torch.sum(target) - intersection
+
+    return intersection / union
+
+
 class DiceCoeff(Function):
     """Dice coeff for individual examples"""
 
