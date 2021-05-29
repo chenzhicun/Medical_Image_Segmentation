@@ -1,7 +1,7 @@
 export CUDA_VISIBLE_DEVICES=2
 cd ..
 python predict.py\
-    --saved_model ./checkpoints/test/CP_best.pth\
+    --saved_model ./checkpoints/unet_fix_bug/CP_best.pth\
     --input_dir ./data/test_img\
     --output_dir ./output\
     --mask_dir ./data/test_label\
