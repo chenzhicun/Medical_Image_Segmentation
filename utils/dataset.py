@@ -62,6 +62,7 @@ class MIS_Dataset(Dataset):
         img = img.transpose((2, 0, 1))
         if img.max() > 1:
             img = img/255
+        img=1-img
         return img
 
     def __getitem__(self, index):
