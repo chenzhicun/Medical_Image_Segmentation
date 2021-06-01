@@ -25,7 +25,7 @@ def predict_img(net,
     net.eval()
 
     img = torch.from_numpy(MIS_Dataset.img_transform(full_img))
-
+    img = (img - 0.5052) / 0.1678
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
 
@@ -68,6 +68,7 @@ def get_args():
                         help="Minimum probability value to consider a mask pixel white",
                         default=0.5)
     parser.add_argument('--model_name',type=str,default='unet',help='model name.')
+    parser.add_argument('--in_channel',type=int,default=1,help='in channels of image.')
 
     return parser.parse_args()
 
@@ -114,9 +115,15 @@ if __name__ == "__main__":
 
         logging.info("Mask saved to {}".format(f'{out_dir}/{img_ids[i]}_output.png'))
 
-    test_dataset = MIS_Dataset(in_dir,args.mask_dir,argument=False,type='test')
+    test_dataset = MIS_Dataset(in_dir,args.mask_dir,argument=False,type='test',in_channel=args.in_channel)
     test_dataloader = DataLoader(test_dataset)
     dice_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='dice')
     print(f'The dice score on test dataset is {dice_score}.')
     iou_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='iou')
     print(f'The IOU score on test dataset is {iou_score}.')
+    acc_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='acc')
+    print(f'The accuracy score on test dataset is {acc_score}.')
+    # Computing vrand and Vinfo costs a long time to compute.
+    vrand_score, vinfo_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='vrand&vinfo')
+    print(f'The V^rand score on test dataset is {vrand_score}.')
+    print(f'The V^info score on test dataset is {vinfo_score}.')

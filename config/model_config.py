@@ -21,5 +21,7 @@ def get_args():
                             default=0.5, help='the probability threshold of mask')
     parser.add_argument('--argument', action='store_true',
                             help='Whether do argument on train dataset.')
+    parser.add_argument('--in_channel', dest='in_channel', type=int, default=1,
+                        help='input channels of input image.')
 
     return parser.parse_args()

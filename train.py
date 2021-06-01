@@ -6,10 +6,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
+from torch.optim import lr_scheduler
 from tqdm import tqdm
 
 from eval import eval_net
-from model.unet_model import UNet
 from config.model_config import get_args
 from utils.dataset import MIS_Dataset
 from utils.get_model import get_model
@@ -19,20 +19,6 @@ from torch.utils.data import DataLoader
 dir_img = 'data/train_img/'
 dir_mask = 'data/train_label/'
 
-
-def print_model_info(name):
-    '''
-    print some key information of model.
-    '''
-    if name=='unet':
-        logging.info(f'Network:\n'
-                 f'\t{net.n_channels} input channels\n'
-                 f'\t{net.n_classes} output channels (classes)\n'
-                 f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
-    else:
-        raise NotImplementedError
-
-
 def train_net(net,
               device,
               epochs=50,
@@ -41,17 +27,22 @@ def train_net(net,
               val_percent=0.1,
               save_cp=True,
               threshold=0.5,
-              argument=True):
+              argument=True,
+              in_channel=1):
     # generate the train dataloader and validation dataloader.
+    # train_dataset = MIS_Dataset(
+    #     dir_img, dir_mask, argument=argument, type='train', val_percent=val_percent)
+    # val_dataset = MIS_Dataset(
+    #     dir_img, dir_mask, argument=False, type='val', val_percent=val_percent)
     train_dataset = MIS_Dataset(
-        dir_img, dir_mask, argument=argument, type='train', val_percent=val_percent)
+        dir_img, dir_mask, argument=argument, type='train', val_percent=val_percent, in_channel=in_channel)
     val_dataset = MIS_Dataset(
-        dir_img, dir_mask, argument=False, type='val', val_percent=val_percent)
+        dir_img, dir_mask, argument=False, type='val', val_percent=val_percent, in_channel=in_channel)
     n_val = len(val_dataset)
     n_train = len(train_dataset)
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size,
+    val_loader = DataLoader(val_dataset, batch_size=1,
                             shuffle=False, num_workers=8, pin_memory=True, drop_last=True)
 
     global_step = 0
@@ -68,13 +59,13 @@ def train_net(net,
         Argument:        {argument}
     ''')
 
-    optimizer = optim.Adam(net.parameters(), lr=lr)
+    optimizer = optim.Adam([{'params': net.parameters(), 'initial_lr': lr}], lr=lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, 'min' if net.n_classes > 1 else 'max', patience=2)
-    if net.n_classes > 1:
-        criterion = nn.CrossEntropyLoss()
-    else:
-        criterion = nn.BCEWithLogitsLoss()
+        optimizer, 'min' if net.n_classes > 1 else 'max', patience=5)
+    # milestones = [20,30,40]
+    # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = milestones, gamma = 0.1)
+    
+    criterion = nn.BCEWithLogitsLoss()
 
     best_score = 0
 
@@ -111,6 +102,12 @@ def train_net(net,
 
         val_score = eval_net(net, val_loader, device, threshold)
         scheduler.step(val_score)
+        # scheduler.step()
+        # if epoch in milestones:
+        #     net.load_state_dict(
+        #     torch.load(f'./checkpoints/{args.model}_{args.exp_id}/CP_best.pth', map_location=device)
+        # )
+        #     logging.info('loding previous best model.')
         logging.info('Current lr:{}'.format(
             optimizer.state_dict()['param_groups'][0]['lr']))
 
@@ -137,6 +134,7 @@ def train_net(net,
     logging.info(f'Final checkpoint saved !')
     logging.info(f'Best score on validation set is {best_score}, during epoch {best_epoch}.')
 
+    return best_score
 
 
 if __name__ == '__main__':
@@ -153,7 +151,6 @@ if __name__ == '__main__':
         pass
 
     net=get_model(args.model)
-    print_model_info(args.model)
 
     if args.load:
         net.load_state_dict(
@@ -162,7 +159,6 @@ if __name__ == '__main__':
         logging.info(f'Model loaded from {args.load}')
 
     net.to(device=device)
-
     try:
         train_net(net=net,
                   epochs=args.epochs,
@@ -171,7 +167,8 @@ if __name__ == '__main__':
                   device=device,
                   val_percent=args.val / 100,
                   threshold=args.threshold,
-                  argument=args.argument)
+                  argument=args.argument,
+                  in_channel=args.in_channel)
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
@@ -179,3 +176,32 @@ if __name__ == '__main__':
             sys.exit(0)
         except SystemExit:
             os._exit(0)
+    '''
+    global_best_score = 0
+
+    try:
+        best_score = train_net(net=net,
+                  epochs=args.epochs,
+                  batch_size=args.batchsize,
+                  lr=args.lr,
+                  device=device,
+                  val_percent=args.val / 100,
+                  threshold=args.threshold,
+                  argument=args.argument,
+                  in_channel=args.in_channel)
+        while best_score<0.836:
+            net=get_model(args.model)
+            net.to(device=device)
+            best_score = train_net(net=net,
+                  epochs=args.epochs,
+                  batch_size=args.batchsize,
+                  lr=args.lr,
+                  device=device,
+                  val_percent=args.val / 100,
+                  threshold=args.threshold,
+                  argument=args.argument,
+                  in_channel=args.in_channel)
+            if best_score>global_best_score:
+                os.popen(f'cp ./checkpoints/{args.model}_{args.exp_id}/CP_best.pth ./checkpoints/best/cenet')
+                global_best_score = best_score
+    '''
