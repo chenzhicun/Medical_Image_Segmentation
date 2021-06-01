@@ -57,7 +57,17 @@ def dice_coeff(input, target):
     return s / (i + 1)
 
 
-def compute_metric(predict, label):
+def accuracy(predict, gt):
+    '''
+    predict.shape: B X 1 X H X W
+    gt.shape: B X 1 X H X W
+    '''
+    acc_tensor = predict == gt
+    acc_tensor = acc_tensor.view(-1)
+    return torch.sum(acc_tensor) / len(acc_tensor)
+
+
+def vrand_vinfo(predict, label):
     def get_segment(data):
         data = copy.deepcopy(data)
         segment = []
