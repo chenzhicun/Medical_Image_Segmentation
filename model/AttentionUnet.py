@@ -8,9 +8,10 @@ class conv_block(nn.Module):
     """
     Convolution Block 
     """
+
     def __init__(self, in_ch, out_ch):
         super(conv_block, self).__init__()
-        
+
         self.conv = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=True),
             nn.BatchNorm2d(out_ch),
@@ -20,7 +21,6 @@ class conv_block(nn.Module):
             nn.ReLU(inplace=True))
 
     def forward(self, x):
-
         x = self.conv(x)
         return x
 
@@ -29,6 +29,7 @@ class up_conv(nn.Module):
     """
     Up Convolution Block
     """
+
     def __init__(self, in_ch, out_ch):
         super(up_conv, self).__init__()
         self.up = nn.Sequential(
@@ -83,6 +84,7 @@ class AttU_Net(nn.Module):
     Attention Unet implementation
     Paper: https://arxiv.org/abs/1804.03999
     """
+
     def __init__(self, num_channels=1, num_classes=1):
         super(AttU_Net, self).__init__()
 
@@ -121,9 +123,7 @@ class AttU_Net(nn.Module):
 
         self.Conv = nn.Conv2d(filters[0], self.n_classes, kernel_size=1, stride=1, padding=0)
 
-
     def forward(self, x):
-
         e1 = self.Conv1(x)
 
         e2 = self.Maxpool1(e1)
@@ -138,9 +138,9 @@ class AttU_Net(nn.Module):
         e5 = self.Maxpool4(e4)
         e5 = self.Conv5(e5)
 
-        #print(x5.shape)
+        # print(x5.shape)
         d5 = self.Up5(e5)
-        #print(d5.shape)
+        # print(d5.shape)
         x4 = self.Att5(g=d5, x=e4)
         d5 = torch.cat((x4, d5), dim=1)
         d5 = self.Up_conv5(d5)

@@ -5,7 +5,7 @@ import torch
 
 
 class conv_block_nested(nn.Module):
-    
+
     def __init__(self, in_ch, mid_ch, out_ch):
         super(conv_block_nested, self).__init__()
         self.activation = nn.ReLU(inplace=True)
@@ -18,20 +18,22 @@ class conv_block_nested(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.activation(x)
-        
+
         x = self.conv2(x)
         x = self.bn2(x)
         output = self.activation(x)
 
         return output
-    
-#Nested Unet
+
+
+# Nested Unet
 
 class NestedUNet(nn.Module):
     """
     Implementation of this paper:
     https://arxiv.org/pdf/1807.10165.pdf
     """
+
     def __init__(self, num_channels=1, num_classes=1):
         super(NestedUNet, self).__init__()
 
@@ -55,20 +57,18 @@ class NestedUNet(nn.Module):
         self.conv2_1 = conv_block_nested(filters[2] + filters[3], filters[2], filters[2])
         self.conv3_1 = conv_block_nested(filters[3] + filters[4], filters[3], filters[3])
 
-        self.conv0_2 = conv_block_nested(filters[0]*2 + filters[1], filters[0], filters[0])
-        self.conv1_2 = conv_block_nested(filters[1]*2 + filters[2], filters[1], filters[1])
-        self.conv2_2 = conv_block_nested(filters[2]*2 + filters[3], filters[2], filters[2])
+        self.conv0_2 = conv_block_nested(filters[0] * 2 + filters[1], filters[0], filters[0])
+        self.conv1_2 = conv_block_nested(filters[1] * 2 + filters[2], filters[1], filters[1])
+        self.conv2_2 = conv_block_nested(filters[2] * 2 + filters[3], filters[2], filters[2])
 
-        self.conv0_3 = conv_block_nested(filters[0]*3 + filters[1], filters[0], filters[0])
-        self.conv1_3 = conv_block_nested(filters[1]*3 + filters[2], filters[1], filters[1])
+        self.conv0_3 = conv_block_nested(filters[0] * 3 + filters[1], filters[0], filters[0])
+        self.conv1_3 = conv_block_nested(filters[1] * 3 + filters[2], filters[1], filters[1])
 
-        self.conv0_4 = conv_block_nested(filters[0]*4 + filters[1], filters[0], filters[0])
+        self.conv0_4 = conv_block_nested(filters[0] * 4 + filters[1], filters[0], filters[0])
 
         self.final = nn.Conv2d(filters[0], self.n_classes, kernel_size=1)
 
-
     def forward(self, x):
-        
         x0_0 = self.conv0_0(x)
         x1_0 = self.conv1_0(self.pool(x0_0))
         x0_1 = self.conv0_1(torch.cat([x0_0, self.Up(x1_0)], 1))

@@ -94,8 +94,8 @@ class CE_Net_OCT(nn.Module):
         self.n_channels = num_channels
 
         filters = [64, 128, 256, 512]
-        
-        if self.n_channels==3:
+
+        if self.n_channels == 3:
             resnet = models.resnet34(pretrained=True)
             self.firstconv = resnet.conv1
         else:

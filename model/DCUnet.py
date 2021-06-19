@@ -6,20 +6,20 @@ import torch.nn.functional as F
 
 def autopad(k, p=None):
     if p is None:
-        p = k // 2 if isinstance(k, int) else [x // 2 for x in k] 
+        p = k // 2 if isinstance(k, int) else [x // 2 for x in k]
     return p
 
 
 class ConvBlock(nn.Module):
-    
-    def __init__(self, 
+
+    def __init__(self,
                  input_channels: int,
                  output_channels: int,
                  kernel_size: Tuple[int, int],
                  stride: Tuple[int, int],
                  padding: Union[int, None] = None,
                  activation: bool = True,
-                 **kwargs): 
+                 **kwargs):
         super(ConvBlock, self).__init__()
         self.input_channels = input_channels
         self.output_channels = output_channels
@@ -38,7 +38,8 @@ class ConvBlock(nn.Module):
             out = F.relu(out)
         return out
 
-class MaxPooling(nn.Module): 
+
+class MaxPooling(nn.Module):
 
     def __init__(self,
                  input_channels: int,
@@ -50,22 +51,23 @@ class MaxPooling(nn.Module):
         self.pool = nn.MaxPool2d(kernel_size=kernel_size,
                                  padding=autopad(k=kernel_size, p=padding),
                                  **kwargs)
-                                 
-    def forward(self, x: torch.Tensor) -> torch.Tensor: 
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.pool(x)
         return out
-    
-class ConvTranspose(nn.Module): 
-    
+
+
+class ConvTranspose(nn.Module):
+
     def __init__(self,
                  input_channels: int,
-                 output_channels: int, 
+                 output_channels: int,
                  kernel_size: Tuple[int, int] = (2, 2),
                  stride: Tuple[int, int] = (2, 2),
                  padding: Union[int, None] = None,
                  **kwargs):
         super(ConvTranspose, self).__init__()
-        self.input_channels = input_channels 
+        self.input_channels = input_channels
         self.output_channels = output_channels
         self.transpose = nn.ConvTranspose2d(in_channels=self.input_channels,
                                             out_channels=self.output_channels,
@@ -73,9 +75,9 @@ class ConvTranspose(nn.Module):
                                             stride=stride,
                                             padding=autopad(k=kernel_size, p=padding),
                                             **kwargs)
-        
-    def forward(self, 
-                x1: torch.Tensor, 
+
+    def forward(self,
+                x1: torch.Tensor,
                 x2: torch.Tensor
                 ) -> torch.Tensor:
         out = self.transpose(x1)
@@ -87,11 +89,12 @@ class ConvTranspose(nn.Module):
         out = torch.cat([x2, out], dim=1)
         return out
 
-class DcBlock(nn.Module): 
+
+class DcBlock(nn.Module):
 
     def __init__(self,
                  corresponding_filters: int,
-                 input_channels: int, 
+                 input_channels: int,
                  kernel_size: Tuple[int, int] = (3, 3),
                  stride: Tuple[int, int] = (1, 1),
                  padding: Union[int, None] = None,
@@ -102,41 +105,41 @@ class DcBlock(nn.Module):
         self.output_channels = None
         self.w = corresponding_filters * alpha
         self.add_channels = 0 if not kwargs.get('add_channels') else kwargs.get('add_channels')
-        self.filters = [int(self.w*0.167), int(self.w*0.333), int(self.w*0.5)]
+        self.filters = [int(self.w * 0.167), int(self.w * 0.333), int(self.w * 0.5)]
         self.left_module = nn.ModuleList()
         self.right_module = nn.ModuleList()
 
-        for i, filter in enumerate(self.filters): 
-            if i == 0: 
+        for i, filter in enumerate(self.filters):
+            if i == 0:
                 self.left_module.append(module=ConvBlock(input_channels=self.input_channels + self.add_channels,
                                                          output_channels=filter,
                                                          kernel_size=kernel_size,
                                                          stride=stride,
                                                          padding=autopad(k=kernel_size, p=padding)))
-                
+
                 self.right_module.append(module=ConvBlock(input_channels=self.input_channels + self.add_channels,
                                                           output_channels=filter,
                                                           kernel_size=kernel_size,
                                                           stride=stride,
                                                           padding=autopad(k=kernel_size, p=padding)))
-            else: 
-                self.left_module.append(module=ConvBlock(input_channels=self.left_module[i-1].output_channels,
+            else:
+                self.left_module.append(module=ConvBlock(input_channels=self.left_module[i - 1].output_channels,
                                                          output_channels=filter,
                                                          kernel_size=kernel_size,
                                                          stride=stride,
                                                          padding=autopad(k=kernel_size, p=padding)))
-                self.right_module.append(module=ConvBlock(input_channels=self.right_module[i-1].output_channels,
+                self.right_module.append(module=ConvBlock(input_channels=self.right_module[i - 1].output_channels,
                                                           output_channels=filter,
                                                           kernel_size=kernel_size,
                                                           stride=stride,
                                                           padding=autopad(k=kernel_size, p=padding)))
 
             self.input_channels, self.output_channels = filter, filter
-        
+
         self.output_channels = sum(self.filters)
         self.bn = nn.BatchNorm2d(num_features=self.output_channels)
-        
-    def forward(self, x: torch.Tensor) -> torch.Tensor: 
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         out_left = []
         out_right = []
 
@@ -144,27 +147,28 @@ class DcBlock(nn.Module):
             if i == 0:
                 out_left.append(left(x))
                 out_right.append(left(x))
-            else: 
-                out_left.append(left(out_left[i-1]))
-                out_right.append(right(out_right[i-1]))
-                
+            else:
+                out_left.append(left(out_left[i - 1]))
+                out_right.append(right(out_right[i - 1]))
+
         out1 = torch.cat(tensors=out_left, dim=1)
         out1 = self.bn(out1)
         out2 = torch.cat(tensors=out_right, dim=1)
         out2 = self.bn(out2)
-        out = torch.add(out1, out2)    
+        out = torch.add(out1, out2)
         out = F.relu(out)
         out = self.bn(out)
 
         return out
 
+
 class ResPath(nn.Module):
 
     def __init__(self,
-                 input_channels: int, 
+                 input_channels: int,
                  output_channels: int,
                  length: int,
-                 padding: Union[int, None] = None): 
+                 padding: Union[int, None] = None):
         super(ResPath, self).__init__()
         self.length = length
         self.input_channels = input_channels
@@ -175,18 +179,18 @@ class ResPath(nn.Module):
                                stride=(1, 1),
                                padding=autopad(k=(1, 1), p=padding),
                                activation=False)
-        
+
         self.conv2 = ConvBlock(input_channels=self.input_channels,
                                output_channels=self.output_channels,
                                kernel_size=(3, 3),
                                stride=(1, 1),
                                padding=autopad(k=(3, 3), p=padding))
-        
+
         self.bn = nn.BatchNorm2d(num_features=self.conv2.output_channels)
-        
+
         self.module = nn.ModuleList()
 
-        for i in range(self.length-1):
+        for i in range(self.length - 1):
             self.module.append(module=ConvBlock(input_channels=self.output_channels,
                                                 output_channels=self.output_channels,
                                                 kernel_size=(1, 1),
@@ -199,7 +203,7 @@ class ResPath(nn.Module):
                                                 stride=(1, 1),
                                                 padding=autopad(k=(3, 3), p=padding)))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor: 
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         shortcut = x
         shortcut = self.conv1(shortcut)
         out = self.conv2(x)
@@ -207,15 +211,16 @@ class ResPath(nn.Module):
         out = F.relu(out)
         out = self.bn(out)
 
-        for i in range(self.length-1):
+        for i in range(self.length - 1):
             shortcut = out
             shortcut = self.module[i](shortcut)
-            out = self.module[i+1](out)
+            out = self.module[i + 1](out)
             out = torch.add(shortcut, out)
             out = F.relu(out)
             out = self.bn(out)
 
         return out
+
 
 class DCUNet(nn.Module):
 
@@ -225,55 +230,55 @@ class DCUNet(nn.Module):
         super(DCUNet, self).__init__()
         self.n_channels = num_channels
         self.n_classes = num_classes
-        self.dc_block_1 = DcBlock(corresponding_filters=32, 
+        self.dc_block_1 = DcBlock(corresponding_filters=32,
                                   input_channels=self.n_channels)
         self.pool1 = MaxPooling(input_channels=self.dc_block_1.output_channels)
         self.res_path_1 = ResPath(input_channels=self.dc_block_1.output_channels,
                                   output_channels=32,
                                   length=4)
-        self.dc_block_2 = DcBlock(corresponding_filters=32*2, 
+        self.dc_block_2 = DcBlock(corresponding_filters=32 * 2,
                                   input_channels=self.pool1.input_channels)
         self.pool2 = MaxPooling(input_channels=self.dc_block_2.output_channels)
         self.res_path_2 = ResPath(input_channels=self.dc_block_2.output_channels,
-                                  output_channels=32*2,
+                                  output_channels=32 * 2,
                                   length=3)
-                                  
-        self.dc_block_3 = DcBlock(corresponding_filters=32*4, 
+
+        self.dc_block_3 = DcBlock(corresponding_filters=32 * 4,
                                   input_channels=self.pool2.input_channels)
         self.pool3 = MaxPooling(input_channels=self.dc_block_3.output_channels)
         self.res_path_3 = ResPath(input_channels=self.dc_block_3.output_channels,
-                                  output_channels=32*4,
+                                  output_channels=32 * 4,
                                   length=2)
 
-        self.dc_block_4 = DcBlock(corresponding_filters=32*8, 
+        self.dc_block_4 = DcBlock(corresponding_filters=32 * 8,
                                   input_channels=self.pool3.input_channels)
         self.pool4 = MaxPooling(input_channels=self.dc_block_4.output_channels)
         self.res_path_4 = ResPath(input_channels=self.dc_block_4.output_channels,
-                                  output_channels=32*8,
+                                  output_channels=32 * 8,
                                   length=1)
-        self.dc_block_5 = DcBlock(corresponding_filters=32*16,
+        self.dc_block_5 = DcBlock(corresponding_filters=32 * 16,
                                   input_channels=self.pool4.input_channels)
 
         self.up1 = ConvTranspose(input_channels=self.dc_block_5.output_channels,
-                                 output_channels=32*8*2)
-        self.dc_block_6 = DcBlock(corresponding_filters=32*8,
+                                 output_channels=32 * 8 * 2)
+        self.dc_block_6 = DcBlock(corresponding_filters=32 * 8,
                                   input_channels=self.up1.output_channels,
                                   add_channels=256)
 
         self.up2 = ConvTranspose(input_channels=self.dc_block_6.output_channels,
-                                 output_channels=32*4*2)
-        self.dc_block_7 = DcBlock(corresponding_filters=32*4,
+                                 output_channels=32 * 4 * 2)
+        self.dc_block_7 = DcBlock(corresponding_filters=32 * 4,
                                   input_channels=self.up2.output_channels,
                                   add_channels=128)
 
         self.up3 = ConvTranspose(input_channels=self.dc_block_7.output_channels,
-                                 output_channels=32*2*2)
-        self.dc_block_8 = DcBlock(corresponding_filters=32*2,
+                                 output_channels=32 * 2 * 2)
+        self.dc_block_8 = DcBlock(corresponding_filters=32 * 2,
                                   input_channels=self.up3.output_channels,
                                   add_channels=64)
 
         self.up4 = ConvTranspose(input_channels=self.dc_block_8.output_channels,
-                                 output_channels=32*2)
+                                 output_channels=32 * 2)
         self.dc_block_9 = DcBlock(corresponding_filters=32,
                                   input_channels=self.up4.output_channels,
                                   add_channels=32)
@@ -317,5 +322,5 @@ class DCUNet(nn.Module):
         dc_block_9 = self.dc_block_9(up4)
 
         out = self.conv_out(dc_block_9)
-                
+
         return out

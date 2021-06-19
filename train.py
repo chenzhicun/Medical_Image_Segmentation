@@ -15,9 +15,11 @@ from utils.dataset import MIS_Dataset
 from utils.get_model import get_model
 
 from torch.utils.data import DataLoader
+
 # define the dir of dataset
 dir_img = 'data/train_img/'
 dir_mask = 'data/train_label/'
+
 
 def train_net(net,
               device,
@@ -30,10 +32,6 @@ def train_net(net,
               argument=True,
               in_channel=1):
     # generate the train dataloader and validation dataloader.
-    # train_dataset = MIS_Dataset(
-    #     dir_img, dir_mask, argument=argument, type='train', val_percent=val_percent)
-    # val_dataset = MIS_Dataset(
-    #     dir_img, dir_mask, argument=False, type='val', val_percent=val_percent)
     train_dataset = MIS_Dataset(
         dir_img, dir_mask, argument=argument, type='train', val_percent=val_percent, in_channel=in_channel)
     val_dataset = MIS_Dataset(
@@ -64,7 +62,7 @@ def train_net(net,
         optimizer, 'min' if net.n_classes > 1 else 'max', patience=5)
     # milestones = [20,30,40]
     # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = milestones, gamma = 0.1)
-    
+
     criterion = nn.BCEWithLogitsLoss()
 
     best_score = 0
@@ -150,7 +148,7 @@ if __name__ == '__main__':
     except:
         pass
 
-    net=get_model(args.model)
+    net = get_model(args.model)
 
     if args.load:
         net.load_state_dict(

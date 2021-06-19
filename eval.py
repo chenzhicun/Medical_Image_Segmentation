@@ -30,7 +30,6 @@ def search_threshold(predict, gt):
     return optimal_threshold
 
 
-
 def eval_net(net, loader, device, threshold=0.5, criterion='dice'):
     net.eval()
     mask_type = torch.float32 if net.n_classes == 1 else torch.long
@@ -38,7 +37,7 @@ def eval_net(net, loader, device, threshold=0.5, criterion='dice'):
     tot, tot_vrand, tot_vinfo = 0, 0, 0
     criterion_dict = {'dice': dice_coeff,
                       'iou': IOU,
-                      'vrand&vinfo':vrand_vinfo,
+                      'vrand&vinfo': vrand_vinfo,
                       'acc': accuracy}
     try:
         criterion = criterion_dict[criterion]
@@ -61,10 +60,10 @@ def eval_net(net, loader, device, threshold=0.5, criterion='dice'):
                 # threshold = search_threshold(pred, gt_masks)
                 # print(threshold)
                 # x=input()
-                if criterion==vrand_vinfo:
+                if criterion == vrand_vinfo:
                     pred = (pred > threshold)
                     gt_masks = gt_masks.to(device=device, dtype=torch.bool)
-                    tmp_vrand, tmp_vinfo = vrand_vinfo(pred[0,0,:,:],gt_masks[0,0,:,:])
+                    tmp_vrand, tmp_vinfo = vrand_vinfo(pred[0, 0, :, :], gt_masks[0, 0, :, :])
                     tot_vrand += tmp_vrand.item()
                     tot_vinfo += tmp_vinfo.item()
                 else:
@@ -73,6 +72,6 @@ def eval_net(net, loader, device, threshold=0.5, criterion='dice'):
             pbar.update()
 
     net.train()
-    if criterion==vrand_vinfo:
+    if criterion == vrand_vinfo:
         return tot_vrand / num_val, tot_vinfo / num_val
     return tot / num_val

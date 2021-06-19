@@ -63,12 +63,12 @@ def get_args():
                         help='dirs of input images', required=True)
     parser.add_argument('--output_dir', '-o', type=str,
                         help='dirs of ouput images')
-    parser.add_argument('--mask_dir', '-d',type=str,help='dirs of gt mask')
+    parser.add_argument('--mask_dir', '-d', type=str, help='dirs of gt mask')
     parser.add_argument('--mask_threshold', '-t', type=float,
                         help="Minimum probability value to consider a mask pixel white",
                         default=0.5)
-    parser.add_argument('--model_name',type=str,default='unet',help='model name.')
-    parser.add_argument('--in_channel',type=int,default=1,help='in channels of image.')
+    parser.add_argument('--model_name', type=str, default='unet', help='model name.')
+    parser.add_argument('--in_channel', type=int, default=1, help='in channels of image.')
 
     return parser.parse_args()
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         pass
     out_dir = f'{args.output_dir}/{args.model_name}'
 
-    img_ids=[splitext(file)[0] for file in listdir(in_dir) if not file.startswith('.')]
+    img_ids = [splitext(file)[0] for file in listdir(in_dir) if not file.startswith('.')]
 
     net = get_model(args.model_name)
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     net.load_state_dict(torch.load(args.saved_model, map_location=device))
 
     logging.info("Model loaded !")
-    
+
     for i in tqdm(range(len(img_ids))):
         img_name = f'{in_dir}/{img_ids[i]}.png'
         logging.info("\nPredicting image {} ...".format(img_name))
@@ -115,15 +115,15 @@ if __name__ == "__main__":
 
         logging.info("Mask saved to {}".format(f'{out_dir}/{img_ids[i]}_output.png'))
 
-    test_dataset = MIS_Dataset(in_dir,args.mask_dir,argument=False,type='test',in_channel=args.in_channel)
+    test_dataset = MIS_Dataset(in_dir, args.mask_dir, argument=False, type='test', in_channel=args.in_channel)
     test_dataloader = DataLoader(test_dataset)
-    dice_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='dice')
+    dice_score = eval_net(net, test_dataloader, device, args.mask_threshold, criterion='dice')
     print(f'The dice score on test dataset is {dice_score}.')
-    iou_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='iou')
+    iou_score = eval_net(net, test_dataloader, device, args.mask_threshold, criterion='iou')
     print(f'The IOU score on test dataset is {iou_score}.')
-    acc_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='acc')
+    acc_score = eval_net(net, test_dataloader, device, args.mask_threshold, criterion='acc')
     print(f'The accuracy score on test dataset is {acc_score}.')
     # Computing vrand and Vinfo costs a long time to compute.
-    vrand_score, vinfo_score = eval_net(net, test_dataloader, device, args.mask_threshold,criterion='vrand&vinfo')
+    vrand_score, vinfo_score = eval_net(net, test_dataloader, device, args.mask_threshold, criterion='vrand&vinfo')
     print(f'The V^rand score on test dataset is {vrand_score}.')
     print(f'The V^info score on test dataset is {vinfo_score}.')
