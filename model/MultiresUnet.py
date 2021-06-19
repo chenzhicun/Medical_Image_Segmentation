@@ -1,7 +1,7 @@
 import torch
 
 
-def Conv2dSame(in_channels, out_channels, kernel_size, use_bias=True, padding_layer=torch.nn.ReflectionPad2d):
+def conv2d_same(in_channels, out_channels, kernel_size, use_bias=True, padding_layer=torch.nn.ReflectionPad2d):
     ka = kernel_size // 2
     kb = ka - 1 if kernel_size % 2 == 0 else ka
     return [
@@ -14,7 +14,7 @@ def conv2d_bn(in_channels, filters, kernel_size, padding='same', activation='rel
     assert padding == 'same'
     affine = False if activation == 'relu' or activation == 'sigmoid' else True
     sequence = []
-    sequence += Conv2dSame(in_channels, filters, kernel_size, use_bias=False)
+    sequence += conv2d_same(in_channels, filters, kernel_size, use_bias=False)
     sequence += [torch.nn.BatchNorm2d(filters, affine=affine)]
     if activation == "relu":
         sequence += [torch.nn.ReLU()]
@@ -27,6 +27,7 @@ def conv2d_bn(in_channels, filters, kernel_size, padding='same', activation='rel
     return torch.nn.Sequential(*sequence)
 
 
+# incorporates 3 x 3, 5 x 5, 7 x 7 conv
 class MultiResBlock(torch.nn.Module):
     def __init__(self, in_channels, u, alpha=1.67, use_dropout=False):
         super().__init__()
@@ -71,7 +72,7 @@ class ResPathBlock(torch.nn.Module):
     def forward(self, inp):
         shortcut = self.conv2d_bn1(inp)
         out = self.conv2d_bn2(inp)
-        out = torch.add(shortcut, out)
+        out = torch.add(shortcut, out)  # residual connection
         out = self.relu(out)
         out = self.bn(out)
         return out
