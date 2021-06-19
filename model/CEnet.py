@@ -7,7 +7,7 @@ from functools import partial
 
 nonlinearity = partial(F.relu, inplace=True)
 
-
+# dense atrous convolution
 class DACblock(nn.Module):
     def __init__(self, channel):
         super(DACblock, self).__init__()
@@ -33,7 +33,7 @@ class DACblock(nn.Module):
         out = x + dilate1_out + dilate2_out + dilate3_out + dilate4_out
         return out
 
-
+# residual multi-kernel pooling
 class RMPblock(nn.Module):
     def __init__(self, in_channels):
         super(RMPblock, self).__init__()
