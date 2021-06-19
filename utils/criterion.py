@@ -81,9 +81,9 @@ def vrand_vinfo(predict, label):
                     while not task_queue.empty():
                         task = task_queue.get()
                         (m, n) = task
-                        task_neighbor = [(m+1, n), (m+1, n-1), (m+1, n+1),
-                                (m-1, n), (m-1, n-1), (m-1, n+1),
-                                (m, n+1), (m, n-1)]
+                        task_neighbor = [(m + 1, n), (m + 1, n - 1), (m + 1, n + 1),
+                                         (m - 1, n), (m - 1, n - 1), (m - 1, n + 1),
+                                         (m, n + 1), (m, n - 1)]
                         for neighbor in task_neighbor:
                             (x, y) = neighbor
                             if 0 <= x < 512 and 0 <= y < 512 and data[x][y]:
@@ -108,7 +108,7 @@ def vrand_vinfo(predict, label):
     s_pow = s * s
     t_pow = t * t
 
-    V_rand = np.sum(prob_matrix_pow.flatten()) / ( 0.5 * np.sum(s_pow) + 0.5 * np.sum(t_pow))
+    V_rand = np.sum(prob_matrix_pow.flatten()) / (0.5 * np.sum(s_pow) + 0.5 * np.sum(t_pow))
 
     prob_matrix_entropy = np.nan_to_num(prob_matrix * np.log(prob_matrix))
     s_entropy = np.nan_to_num(s * np.log(s))

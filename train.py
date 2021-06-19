@@ -6,7 +6,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
-from torch.optim import lr_scheduler
 from tqdm import tqdm
 
 from eval import eval_net
