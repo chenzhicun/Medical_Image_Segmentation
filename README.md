@@ -12,9 +12,9 @@ pillow
 ```
 
 ## Results
-![results shown in table]{figures/result_table.png}
+![results shown in table](figures/result_table.png)
 
-![results shown in figure]{figures/result_model.png}
+![results shown in figure](figures/result_model.png)
 
 ## How to add extra model
 
