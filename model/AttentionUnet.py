@@ -44,13 +44,13 @@ class up_conv(nn.Module):
         return x
 
 
-class Attention_block(nn.Module):
+class Attention_Block(nn.Module):
     """
     Attention Block
     """
 
     def __init__(self, F_g, F_l, F_int):
-        super(Attention_block, self).__init__()
+        super(Attention_Block, self).__init__()
 
         self.W_g = nn.Sequential(
             nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
@@ -106,19 +106,19 @@ class AttU_Net(nn.Module):
         self.Conv5 = conv_block(filters[3], filters[4])
 
         self.Up5 = up_conv(filters[4], filters[3])
-        self.Att5 = Attention_block(F_g=filters[3], F_l=filters[3], F_int=filters[2])
+        self.Att5 = Attention_Block(F_g=filters[3], F_l=filters[3], F_int=filters[2])
         self.Up_conv5 = conv_block(filters[4], filters[3])
 
         self.Up4 = up_conv(filters[3], filters[2])
-        self.Att4 = Attention_block(F_g=filters[2], F_l=filters[2], F_int=filters[1])
+        self.Att4 = Attention_Block(F_g=filters[2], F_l=filters[2], F_int=filters[1])
         self.Up_conv4 = conv_block(filters[3], filters[2])
 
         self.Up3 = up_conv(filters[2], filters[1])
-        self.Att3 = Attention_block(F_g=filters[1], F_l=filters[1], F_int=filters[0])
+        self.Att3 = Attention_Block(F_g=filters[1], F_l=filters[1], F_int=filters[0])
         self.Up_conv3 = conv_block(filters[2], filters[1])
 
         self.Up2 = up_conv(filters[1], filters[0])
-        self.Att2 = Attention_block(F_g=filters[0], F_l=filters[0], F_int=32)
+        self.Att2 = Attention_Block(F_g=filters[0], F_l=filters[0], F_int=32)
         self.Up_conv2 = conv_block(filters[1], filters[0])
 
         self.Conv = nn.Conv2d(filters[0], self.n_classes, kernel_size=1, stride=1, padding=0)
