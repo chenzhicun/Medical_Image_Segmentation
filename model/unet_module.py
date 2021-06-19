@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+# repeated application of two 3 X 3 convolutions (unpadded
+# convolutions), each followed by a rectified linear unit (ReLU)
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None):
         super().__init__()
@@ -23,7 +24,7 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.double_conv(x)
 
-
+# downsampling step U-net doubles the number of feature channels
 class Down(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -35,7 +36,8 @@ class Down(nn.Module):
     def forward(self, x):
         return self.maxpool_conv(x)
 
-
+# upsampling of the feature map followed by a 2 X 2
+# convolution (“up-convolution”) that halves the number of feature channels
 class Up(nn.Module):
     def __init__(self, in_channels, out_channels, bilinear=True):
         super().__init__()
@@ -56,9 +58,6 @@ class Up(nn.Module):
 
         x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
                         diffY // 2, diffY - diffY // 2])
-        # if you have padding issues, see
-        # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
-        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
