@@ -1,5 +1,10 @@
 # Medical_Image_Segmentation
-This repo is our team project for SJTU CS420. Generally speaking, this repo tries to do segementation for medical image.
+This repo is our team project for SJTU CS420. Generally speaking, this repo tries to do segementation for medical image.We implement five segmentation model:
+1. U-net
+2. MultiRes U-net
+3. Nested U-net
+4. Attention U-net
+5. Ce-net
 
 ## Environment Require
 ```
